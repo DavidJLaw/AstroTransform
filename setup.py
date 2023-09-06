@@ -3,8 +3,8 @@ import os
 
 setup(
     name="astrotransform",
-    version="0.1.2",
-    packages=find_packages(exclude=["tests*"]),
+    version="0.1.4",
+    packages=find_packages(include=['astrotransform', 'astrotransform.*'], exclude=['tests', 'tests.*']),
     install_requires=[
         'numpy>=1.14.0',
         'datetime>=4.0.0',
