@@ -51,7 +51,7 @@ def to_alt_az(RA, DEC, Lat, Lon, obs_time):
     Lon_rad = np.deg2rad(Lon)
 
     #calculate LST
-    LST = lst.local_sidereal_time(obs_time, Lon)
+    LST = lst.ut_to_local(obs_time, Lon)
     
     #calculate hour angle
     HA = hour_angle.hourangle(LST, RA)
