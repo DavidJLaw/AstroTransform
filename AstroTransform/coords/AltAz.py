@@ -72,10 +72,6 @@ def to_alt_az(RA, DEC, Lat, Lon, obs_time):
     #convert to degrees
     alt = np.rad2deg(alt)
     az = np.rad2deg(az)
-    if az < 0:
-        az += 360
-    if az > 360:
-        az -= 360
-    
+
     return alt, az
 
