@@ -6,6 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from AstroTransform.time import JD, lst
 from AstroTransform.coords import hour_angle
+from astropy.time import Time
 
 def to_alt_az(RA, DEC, Lat, Lon, obs_time):
     """
@@ -32,7 +33,8 @@ def to_alt_az(RA, DEC, Lat, Lon, obs_time):
         The azimuth of the target in degrees.
         
     """
-
+    if isinstance(obs_time, Time):
+        obs_time = obs_time.to_datetime()
     if not isinstance(RA, (int, float)):
         raise TypeError("Expected a float or int for 'RA'.")
     if not isinstance(DEC, (int, float)):
@@ -51,7 +53,7 @@ def to_alt_az(RA, DEC, Lat, Lon, obs_time):
     Lon_rad = np.deg2rad(Lon)
 
     #calculate LST
-    LST = lst.ut_to_local(obs_time, Lon)
+    LST = lst.lst(obs_time, Lon)
     
     #calculate hour angle
     HA = hour_angle.hourangle(LST, RA)
@@ -63,12 +65,17 @@ def to_alt_az(RA, DEC, Lat, Lon, obs_time):
     alt = np.arcsin(sin_alt)
 
     #calculate azimuth
-    sin_az = -np.sin(HA_rad)*np.cos(DEC_rad)/np.cos(alt)
-
+    cos_A = (np.sin(DEC_rad) - np.sin(Lat_rad)*np.sin(alt))/(np.cos(Lat_rad)*np.cos(alt))
+    az = np.arccos(cos_A)
+    # sin_az = -np.sin(HA_rad)*np.cos(DEC_rad)/np.cos(alt)
+    # az = np.arcsin(sin_az)
     #convert to degrees
     alt = np.rad2deg(alt)
     az = np.rad2deg(az)
-
+    if az < 0:
+        az += 360
+    if az > 360:
+        az -= 360
     
     return alt, az
 
