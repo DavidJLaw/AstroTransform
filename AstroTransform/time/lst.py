@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from AstroTransform.time import JD
 
-def local_to_ut(local_time, longitude):
+def local_to_ut(local_time, longitude, time_zone):
     """
     Convert a local time to a Universal Time.
 
@@ -28,14 +28,14 @@ def local_to_ut(local_time, longitude):
         raise TypeError("Expected a float or int for 'longitude'.")
 
     # Calculate the offset in hours
-    offset = longitude / 15.0
+    offset = time_zone
 
     # Convert to UT
     ut = local_time - timedelta(hours=offset)
 
     return ut
 
-def ut_to_local(ut, longitude):
+def ut_to_local(ut, longitude, time_zone):
     """
     Convert a Universal Time to a local time.
 
@@ -58,14 +58,14 @@ def ut_to_local(ut, longitude):
         raise TypeError("Expected a float or int for 'longitude'.")
 
     # Calculate the offset in hours
-    offset = longitude / 15.0
+    offset = time_zone
 
     # Convert to local time
     local_time = ut + timedelta(hours=offset)
 
     return local_time
 
-def lst(date_time, longitude):
+def lst(date_time, longitude, time_zone=0):
     """
     Calculate the Local Sidereal Time.
 
@@ -83,7 +83,7 @@ def lst(date_time, longitude):
     """
 
     #convert to UT
-    ut = local_to_ut(date_time, longitude)
+    ut = local_to_ut(date_time, longitude, time_zone)
 
     # Calculate the Julian Date
     jd = JD.to_jd(ut)
