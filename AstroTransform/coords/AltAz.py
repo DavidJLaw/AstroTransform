@@ -46,41 +46,48 @@ def to_alt_az(RA, DEC, Lat, Lon, obs_time, time_zone=0):
     if not isinstance(obs_time, datetime):
         raise TypeError("Expected a datetime.datetime object for 'obs_time'.")
 
-    #convert to radians
-    RA_rad = np.deg2rad(RA * 15.0)
-    DEC_rad = np.deg2rad(DEC)
-    Lat_rad = np.deg2rad(Lat)
-    Lon_rad = np.deg2rad(Lon)
+     # Convert inputs to arrays
+    RA_arr = np.atleast_1d(RA)
+    DEC_arr = np.atleast_1d(DEC)
+    Lat_arr = np.atleast_1d(Lat)
+    Lon_arr = np.atleast_1d(Lon)
+    obs_time_arr = np.atleast_1d(obs_time)
 
-    #calculate LST
-    LST = lst.lst(obs_time, Lon, time_zone)
-    
-    #calculate hour angle
-    HA = hour_angle.hourangle(LST, RA)
-    HA_rad = np.deg2rad(HA*15.0)
-    LSTrad = np.deg2rad(LST*15.0)
-    # calculate altitude
-    sin_alt = np.sin(DEC_rad)*np.sin(Lat_rad) + np.cos(DEC_rad)*np.cos(Lat_rad)*np.cos(HA_rad)
+    # Convert to radians
+    RA_rad = np.deg2rad(RA_arr * 15.0)
+    DEC_rad = np.deg2rad(DEC_arr)
+    Lat_rad = np.deg2rad(Lat_arr)
+    Lon_rad = np.deg2rad(Lon_arr)
+
+    # Calculate LST
+    LST = np.array([lst.lst(t, lon, time_zone) for t, lon in zip(obs_time_arr, Lon_arr)])
+
+    # Calculate hour angle
+    HA = hour_angle.hourangle(LST, RA_arr)
+    HA_rad = np.deg2rad(HA * 15.0)
+    LSTrad = np.deg2rad(LST * 15.0)
+
+    # Calculate altitude
+    sin_alt = np.sin(DEC_rad) * np.sin(Lat_rad) + np.cos(DEC_rad) * np.cos(Lat_rad) * np.cos(HA_rad)
     alt = np.arcsin(sin_alt)
-    #calculate azimuth #
+
+    # Calculate azimuth
     tolerance = 1e-6
-    cos_az = (np.sin(DEC_rad) - np.sin(alt)*np.sin(Lat_rad))/(np.cos(alt)*np.cos(Lat_rad))
-    if not -1 - tolerance <= cos_az <= 1 + tolerance:
-        # Log a warning or raise an error
-        print(f"Warning: cos_az value {cos_az} is significantly out of range.")
+    cos_az = (np.sin(DEC_rad) - np.sin(alt) * np.sin(Lat_rad)) / (np.cos(alt) * np.cos(Lat_rad))
     cos_az = np.clip(cos_az, -1.0, 1.0)
     az = np.arccos(cos_az)
 
-    if np.sin(HA_rad) > 0:
-        az = 2*np.pi - az
-    else:
-        az = az
-    #convert to degrees
+    az = np.where(np.sin(HA_rad) > 0, 2 * np.pi - az, az)
+
+    # Convert to degrees
     alt = np.rad2deg(alt)
     az = np.rad2deg(az)
 
-
-    return alt, az
+    # If inputs were scalar, return scalar outputs
+    if np.isscalar(RA) and np.isscalar(DEC) and np.isscalar(Lat) and np.isscalar(Lon) and np.isscalar(obs_time):
+        return alt[0], az[0]
+    else:
+        return alt, az
 
 def max_alt(DEC, Lat):
     """
@@ -102,20 +109,27 @@ def max_alt(DEC, Lat):
         raise TypeError("Expected a float or int for 'DEC'.")
     if not isinstance(Lat, (int, float)):
         raise TypeError("Expected a float or int for 'Lat'.")
-    #convert to radians
+    # Convert inputs to arrays
+    DEC_arr = np.atleast_1d(DEC)
+    Lat_arr = np.atleast_1d(Lat)
 
-    DEC_rad = np.deg2rad(DEC)
-    Lat_rad = np.deg2rad(Lat)
+    # Convert to radians
+    DEC_rad = np.deg2rad(DEC_arr)
+    Lat_rad = np.deg2rad(Lat_arr)
 
-    
-    #calculate hour angle
-    HA = 0 # hour angle 0 when target transits
-    HA_rad = np.deg2rad(HA*15.0)
+    # Calculate hour angle (0 when target transits)
+    HA_rad = 0
 
-    # calculate altitude
-    sin_alt = np.sin(DEC_rad)*np.sin(Lat_rad) + np.cos(DEC_rad)*np.cos(Lat_rad)*np.cos(HA_rad)
+    # Calculate altitude
+    sin_alt = np.sin(DEC_rad) * np.sin(Lat_rad) + np.cos(DEC_rad) * np.cos(Lat_rad) * np.cos(HA_rad)
     alt = np.arcsin(sin_alt)
-    #convert to degrees
+
+    # Convert to degrees
     alt = np.rad2deg(alt)
-    return alt
+
+    # If inputs were scalar, return scalar output
+    if np.isscalar(DEC) and np.isscalar(Lat):
+        return alt[0]
+    else:
+        return alt
 

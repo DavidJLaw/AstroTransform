@@ -6,105 +6,106 @@ import numpy as np
 from datetime import datetime, timedelta
 from AstroTransform.time import JD
 
-def local_to_ut(local_time, longitude, time_zone):
+def local_to_ut(local_time, time_zone):
     """
-    Convert a local time to a Universal Time.
+    Convert local times to Universal Time for an array or a single datetime object.
 
     Parameters
     ----------
-    local_time : datetime.datetime
-        The local time to convert to Universal Time.
-    longitude : float
-        The longitude of the observer in degrees.
+    local_time : datetime.datetime or np.array of datetime.datetime
+        The local times to convert to Universal Time.
+    time_zone : float or np.array of float
+        Time zone offsets for each datetime.
 
     Returns
     -------
-    datetime.datetime
-        The Universal Time.
+    datetime.datetime or np.array of datetime.datetime
+        The Universal Times.
     """
-    if not isinstance(local_time, datetime):
-        raise TypeError("Expected a datetime.datetime object for 'local_time'.")
-    if not isinstance(longitude, (int, float)):
-        raise TypeError("Expected a float or int for 'longitude'.")
+    # Convert inputs to arrays if not already
+    local_time_arr = np.atleast_1d(local_time)
+    time_zone_arr = np.atleast_1d(time_zone)
 
-    # Calculate the offset in hours
-    offset = time_zone
+    # Calculate UT for each datetime in the array
+    ut = local_time_arr - np.array([timedelta(hours=offset) for offset in time_zone_arr])
 
-    # Convert to UT
-    ut = local_time - timedelta(hours=offset)
-
+    # Return scalar if input was scalar
+    if np.isscalar(local_time) and np.isscalar(time_zone):
+        return ut[0]
     return ut
 
-def ut_to_local(ut, longitude, time_zone):
+def ut_to_local(ut, time_zone):
     """
-    Convert a Universal Time to a local time.
+    Convert Universal Times to local times for an array or a single datetime object.
 
     Parameters
     ----------
-    ut : datetime.datetime
-        The Universal Time to convert to local time.  
-    longitude : float
-        The longitude of the observer in degrees.
+    ut : datetime.datetime or np.array of datetime.datetime
+        The Universal Times to convert to local time.
+    time_zone : float or np.array of float
+        Time zone offsets for each datetime.
     
     Returns
     -------
-    datetime.datetime
-        The local time.
+    datetime.datetime or np.array of datetime.datetime
+        The local times.
     """
 
-    if not isinstance(ut, datetime):
-        raise TypeError("Expected a datetime.datetime object for 'ut'.")
-    if not isinstance(longitude, (int, float)):
-        raise TypeError("Expected a float or int for 'longitude'.")
+    # Convert inputs to arrays if not already
+    ut_arr = np.atleast_1d(ut)
+    time_zone_arr = np.atleast_1d(time_zone)
 
-    # Calculate the offset in hours
-    offset = time_zone
+    # Convert to local time for each datetime in the array
+    local_time = ut_arr + np.array([timedelta(hours=offset) for offset in time_zone_arr])
 
-    # Convert to local time
-    local_time = ut + timedelta(hours=offset)
-
+    # Return scalar if input was scalar
+    if np.isscalar(ut) and np.isscalar(time_zone):
+        return local_time[0]
     return local_time
 
 def lst(date_time, longitude, time_zone=0):
     """
-    Calculate the Local Sidereal Time.
+    Calculate Local Sidereal Time for an array or a single datetime object.
 
     Parameters
     ----------
-    date_time : datetime.datetime
-        The datetime object to calculate the LST for.
-    longitude : float
+    date_time : datetime.datetime or np.array of datetime.datetime
+        The datetime objects to calculate the LST for.
+    longitude : float or np.array of float
         The longitude of the observer in degrees.
+    time_zone : float or np.array of float
+        The time zone of the observer (default 0).
     
     Returns
     -------
-    float
+    float or np.array of float
         The Local Sidereal Time in hours.
     """
 
-    #convert to UT
-    ut = local_to_ut(date_time, longitude, time_zone)
+    # Convert input to arrays
+    date_time_arr = np.atleast_1d(date_time)
+    longitude_arr = np.atleast_1d(longitude)
+    time_zone_arr = np.atleast_1d(time_zone)
 
-    # Calculate the Julian Date
-    jd = JD.to_jd(ut)
+    # Convert to UT
+    ut = local_to_ut(date_time_arr, time_zone_arr)
 
-    # calculate the number of days since 1st january 2000 at 12:00 UT
-    D = (jd - 2451545.0)
+    # Calculate Julian Date for each UT
+    jd = np.array([JD.to_jd(d) for d in ut])
 
-    # calculate GMST
-    GMST = (18.697374558 + (24.06570982441908 * D)) % 24
+    # Calculate days since J2000.0 at 12:00 UT
+    D = jd - 2451545.0
 
-    # calculate LST
-    #if east of Greenwich, add longitude
-    if longitude > 0:
-        LST = (GMST + (longitude / 15))
-    #if west of Greenwich, subtract longitude
-    else:
-        LST = (GMST - (abs(longitude) / 15))
+    # Calculate GMST for each day
+    GMST = (18.697374558 + 24.06570982441908 * D) % 24
 
+    # Calculate LST for each datetime and longitude
+    LST = GMST + (longitude_arr / 15)
+
+    # Adjust LST to be in the range [0, 24)
+    LST = LST % 24
+
+    # Return scalar if input was scalar
+    if np.isscalar(date_time) and np.isscalar(longitude) and np.isscalar(time_zone):
+        return LST[0]
     return LST
-
-
-
-
-
