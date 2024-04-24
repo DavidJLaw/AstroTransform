@@ -27,7 +27,7 @@ def local_to_ut(local_time, time_zone):
     time_zone_arr = np.atleast_1d(time_zone)
 
     # Calculate UT for each datetime in the array
-    ut = local_time_arr - np.array([timedelta(hours=offset) for offset in time_zone_arr])
+    ut = local_time_arr - np.array([timedelta(hours=int(offset)) for offset in time_zone_arr])
 
     # Return scalar if input was scalar
     if np.isscalar(local_time) and np.isscalar(time_zone):
@@ -56,7 +56,7 @@ def ut_to_local(ut, time_zone):
     time_zone_arr = np.atleast_1d(time_zone)
 
     # Convert to local time for each datetime in the array
-    local_time = ut_arr + np.array([timedelta(hours=offset) for offset in time_zone_arr])
+    local_time = ut_arr + np.array([timedelta(hours=int(offset)) for offset in time_zone_arr])
 
     # Return scalar if input was scalar
     if np.isscalar(ut) and np.isscalar(time_zone):
